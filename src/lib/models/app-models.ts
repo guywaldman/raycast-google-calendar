@@ -1,9 +1,27 @@
-import { GoogleCalendarListApiItemResponse } from "./api-models";
-
-export type GoogleCalendar = GoogleCalendarListApiItemResponse;
+export interface GoogleCalendar {
+  id: string;
+  name: string;
+  backgroundColor?: string;
+  location: string;
+  description: string;
+  hidden: boolean;
+  timezone: string;
+}
 
 export interface GoogleCalendarEvent {
   id: string;
-  summary: string;
+  title: string;
   description: string;
+  startTime: string;
+  endTime: string;
+  calendar: GoogleCalendar;
+  organizerDisplayName?: string;
+}
+
+export interface GoogleCalendarEventCreationRequest {
+  title: string;
+  description: string;
+  startTime: Date;
+  durationInMinutes: number;
+  calendar: GoogleCalendar;
 }

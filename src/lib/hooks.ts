@@ -1,46 +1,87 @@
-import { getAccessToken } from "@raycast/utils";
-import { useEffect, useState } from "react";
+import { getAccessToken, useCachedPromise, useCachedState, useLocalStorage } from "@raycast/utils";
+import { useEffect } from "react";
 import { GoogleCalendarClient } from "./api-client";
-import { GoogleCalendar, GoogleCalendarEvent } from "./models";
+import { DefaultConfig, ExtensionConfig } from "./config";
 
-export function useApiClient() {
-  const [apiClient, setApiClient] = useState<GoogleCalendarClient | null>(null);
-
-  useEffect(() => {
-    const apiClient = new GoogleCalendarClient(getAccessToken().token);
-    setApiClient(apiClient);
-  }, []);
-
-  return apiClient;
+interface CacheItem<T> {
+  lastUpdated: Date;
+  data: T;
 }
 
-function useData<T>(dataFetcher: (apiClient: GoogleCalendarClient) => Promise<T>): T | null {
-  const apiClient = useApiClient();
-  const [data, setData] = useState<T | null>(null);
+export function useCache<T>(cacheKey: string, fetcher: () => Promise<T | null>) {
+  const { data, isLoading, mutate, revalidate } = useCachedPromise(fetcher);
 
-  useEffect(() => {
-    async function getData() {
-      if (!apiClient) {
-        return;
+  // useEffect(() => {
+  //   if (data?.data && data?.lastUpdated) {
+  //     // Data exists - check if it needs to be updated.
+  //     if (new Date().getTime() - data.lastUpdated.getTime() > options?.updateIntervalInMinutes * 60 * 1000) {
+  //       setData(null);
+  //     }
+  //   } else {
+  //     // No data - fetch it.
+  //     fetcher()
+  //       .then((fetchedData) => {
+  //         if (fetchedData) {
+  //           setData({ lastUpdated: new Date(), data: fetchedData });
+  //         }
+  //       })
+  //       .catch((err) => {
+  //         console.error(err);
+  //       });
+  //   }
+  // }, [cacheKey]);
+
+  // return data ? data.data : null;
+  return { data, isLoading, mutate, revalidate };
+}
+
+export function useConfig(): {
+  value: ExtensionConfig | undefined;
+  setValue: (config: ExtensionConfig) => Promise<void>;
+  isLoading: boolean;
+} {
+  const { value, setValue, isLoading } = useLocalStorage("config", DefaultConfig);
+
+  // const updateConfig = useCallback((newConfigState: ExtensionConfig) => {
+  //   return setConfig(newConfigState).then(() => {
+  //     setConfigState(newConfigState);
+  //   });
+  // }, []);
+
+  // useEffect(() => {
+  //   getConfig()
+  //     .then((newConfigState) => {
+  //       if (newConfigState) {
+  //         setConfigState(newConfigState);
+  //       }
+  //     })
+  //     .catch((err) => {
+  //       console.error(err);
+  //       setConfigState(DefaultConfig);
+  //     });
+  // }, []);
+
+  return { value, setValue, isLoading };
+}
+
+export function useCalendars() {
+  const apiClient = new GoogleCalendarClient(getAccessToken().token);
+  return useCache("calendars", async () => await apiClient.getCalendars());
+}
+
+export function useUpcomingEvents() {
+  const apiClient = new GoogleCalendarClient(getAccessToken().token);
+  return useCache("upcoming-events", async () => {
+    const calendars = await apiClient.getCalendars();
+    const allEvents = await Promise.all(calendars.map((cal) => apiClient.getUpcomingEvents(cal)));
+    const events = allEvents.flat();
+    events.sort((a, b) => {
+      if (a.startTime !== b.startTime) {
+        return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+      } else {
+        return new Date(a.endTime).getTime() - new Date(b.endTime).getTime();
       }
-      const fetchedData = await dataFetcher(apiClient);
-      setData(fetchedData);
-    }
-
-    getData();
-
-    return () => {
-      setData(null);
-    };
-  }, [apiClient]);
-
-  return data;
-}
-
-export function useCalendars(): GoogleCalendar[] | null {
-  return useData(async (apiClient) => await apiClient.getCalendars());
-}
-
-export function useEvents(calendarId: string): GoogleCalendarEvent[] | null {
-  return useData(async (apiClient) => await apiClient.getEvents(calendarId));
+    });
+    return events;
+  });
 }
