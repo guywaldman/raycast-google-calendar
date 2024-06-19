@@ -1,9 +1,10 @@
-import { Action, ActionPanel, Form, Toast, popToRoot, showToast } from "@raycast/api";
+import { Action, ActionPanel, Form, LaunchProps, Toast, popToRoot, showToast } from "@raycast/api";
 import { getAccessToken, withAccessToken } from "@raycast/utils";
-import { useCalendars, useConfig } from "./lib/hooks";
-import { RaycastGoogleOAuthService } from "./lib/raycast/google-oauth-service";
+import * as chrono from "chrono-node";
 import { useMemo, useState } from "react";
 import { GoogleCalendarClient } from "./lib/api-client";
+import { useCalendars, useConfig } from "./lib/hooks";
+import { RaycastGoogleOAuthService } from "./lib/raycast/google-oauth-service";
 
 const DefaultDurationValues = [15, 30, 45, 60, 90, 120];
 
@@ -15,10 +16,15 @@ interface FormValues {
   calendarId: string;
 }
 
-function Command() {
+function Command(props: LaunchProps<{ arguments: Arguments.CreateEvent }>) {
   const { value: config, setValue: updateConfig, isLoading: isConfigLoading } = useConfig();
   const { data: calendars, isLoading: isCalendarsLoading } = useCalendars();
   const [durationValues, setDurationValues] = useState(DefaultDurationValues);
+  const {
+    title: titleFromArguments,
+    eventTime: eventTimeFromArguments,
+    eventDuration: eventDurationFromArguments,
+  } = props.arguments;
 
   const sortedCalendars = useMemo(() => {
     if (!calendars || !config) {
@@ -69,37 +75,28 @@ function Command() {
     >
       {sortedCalendars && config && (
         <>
-          <Form.TextField id="eventTitle" title="Event Title" />
+          <Form.TextField id="eventTitle" title="Event Title" defaultValue={titleFromArguments} />
           <Form.TextArea id="eventDescription" title="Event Description" />
-          <Form.DatePicker id="eventStart" title="Event Time" />
+          <Form.DatePicker id="eventStart" title="Event Time" defaultValue={parseDate(eventTimeFromArguments)} />
           <Form.Dropdown
             id="eventDuration"
             title="Event Duration"
             placeholder="Enter time expression such as '30m' or '2h'"
+            defaultValue={eventDurationFromArguments ? parseDuration(eventDurationFromArguments).toString() : ""}
             onSearchTextChange={(searchText) => {
-              const groups = searchText.match(/^(\d+)([mh])$/);
-              if (groups) {
-                const duration = parseInt(groups[1]);
-                const unit = groups[2];
-                let minutes = 0;
-                if (unit === "m") {
-                  minutes = duration;
-                } else if (unit === "h") {
-                  minutes = duration * 60;
-                }
-                if (minutes) {
-                  if (durationValues.includes(minutes)) {
-                    // Item exists - move to top of list.
-                    const matchingIndex = durationValues.indexOf(minutes);
-                    setDurationValues([
-                      minutes,
-                      ...durationValues.slice(0, matchingIndex),
-                      ...durationValues.slice(matchingIndex + 1),
-                    ]);
-                  } else {
-                    // Item does not exist - add to top of list.
-                    setDurationValues([minutes, ...durationValues]);
-                  }
+              const minutes = parseDuration(searchText);
+              if (minutes) {
+                if (durationValues.includes(minutes)) {
+                  // Item exists - move to top of list.
+                  const matchingIndex = durationValues.indexOf(minutes);
+                  setDurationValues([
+                    minutes,
+                    ...durationValues.slice(0, matchingIndex),
+                    ...durationValues.slice(matchingIndex + 1),
+                  ]);
+                } else {
+                  // Item does not exist - add to top of list.
+                  setDurationValues([minutes, ...durationValues]);
                 }
               } else {
                 setDurationValues(DefaultDurationValues);
@@ -120,6 +117,28 @@ function Command() {
       )}
     </Form>
   );
+}
+
+function parseDuration(duration: string): number {
+  const groups = duration.match(/^(\d+)([mh])$/);
+  if (groups) {
+    const durationInMinutes = parseInt(groups[1]);
+    const unit = groups[2];
+    let minutes = 0;
+    if (unit === "m") {
+      minutes = durationInMinutes;
+    } else if (unit === "h") {
+      minutes = durationInMinutes * 60;
+    }
+    return minutes;
+  } else {
+    return 0;
+  }
+}
+
+function parseDate(date: string): Date | null {
+  const parsedDate = chrono.parseDate(date);
+  return parsedDate ?? null;
 }
 
 export default withAccessToken({ authorize: RaycastGoogleOAuthService.authorize })(Command);

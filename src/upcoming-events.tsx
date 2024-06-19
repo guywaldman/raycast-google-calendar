@@ -141,11 +141,13 @@ function ListItemMetadata({ event }: { event: GoogleCalendarEvent }) {
 
 function formatDayName(daysFromNow: number): string {
   const now = new Date();
+  const weekDayTime = now.getTime() + daysFromNow * 24 * 60 * 60 * 1000;
+  const weekDayName = format(weekDayTime, "EEEE");
   if (daysFromNow === 0) {
-    return "Today";
+    return `Today (${weekDayName})`;
   }
   if (daysFromNow === 1) {
-    return "Tomorrow";
+    return `Tomorrow (${weekDayName})`;
   }
-  return format(now.getTime() + daysFromNow * 24 * 60 * 60 * 1000, "EEEE");
+  return weekDayName;
 }

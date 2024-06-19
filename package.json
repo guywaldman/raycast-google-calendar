@@ -29,13 +29,40 @@
       "title": "Create Google Calendar Event",
       "subtitle": "Create a new Google Calendar Event",
       "description": "Create a new Google Calendar Event",
-      "mode": "view"
+      "mode": "view",
+      "arguments": [
+        {
+          "name": "title",
+          "type": "text",
+          "required": false,
+          "placeholder": "My event title",
+          "title": "Title",
+          "description": "The title of the event"
+        },
+        {
+          "name": "eventTime",
+          "type": "text",
+          "required": false,
+          "placeholder": "tomorrow at 10",
+          "title": "Event Time",
+          "description": "Time of the event"
+        },
+        {
+          "name": "eventDuration",
+          "type": "text",
+          "required": false,
+          "placeholder": "30m",
+          "title": "Event Duration",
+          "description": "Duration of the event"
+        }
+      ]
     }
   ],
   "dependencies": {
     "@google-cloud/local-auth": "^3.0.1",
     "@raycast/api": "^1.76.1",
     "@raycast/utils": "^1.16.0",
+    "chrono-node": "^2.7.6",
     "date-fns": "^3.6.0",
     "googleapis": "^140.0.0",
     "node-fetch": "^3.3.2"
