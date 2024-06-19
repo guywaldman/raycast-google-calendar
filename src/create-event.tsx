@@ -31,12 +31,12 @@ function Command(props: LaunchProps<{ arguments: Arguments.CreateEvent }>) {
       return null;
     }
     const sortedCalendars = calendars.sort((a, b) => {
-      const aHidden = config?.calendarConfiguration?.[a.id]?.hidden;
-      const bHidden = config?.calendarConfiguration?.[b.id]?.hidden;
+      const aDisabled = config?.calendarConfiguration?.[a.id]?.disabled;
+      const bDisabled = config?.calendarConfiguration?.[b.id]?.disabled;
 
-      if (aHidden && !bHidden) {
+      if (aDisabled && !bDisabled) {
         return 1;
-      } else if (!aHidden && bHidden) {
+      } else if (!aDisabled && bDisabled) {
         return -1;
       } else {
         return a.name.localeCompare(b.name);
@@ -108,6 +108,7 @@ function Command(props: LaunchProps<{ arguments: Arguments.CreateEvent }>) {
               return <Form.Dropdown.Item key={duration} title={formattedDuration} value={duration.toString()} />;
             })}
           </Form.Dropdown>
+          <Form.TagPicker id="attendees" title="Event Attendees" defaultValue={[]}></Form.TagPicker>
           <Form.Dropdown id="calendarId" title="Calendar" defaultValue={sortedCalendars![0].id}>
             {calendars?.map((calendar) => (
               <Form.Dropdown.Item key={calendar.id} title={calendar.name} value={calendar.id} />

@@ -56,25 +56,25 @@ export class GoogleCalendarClient {
     maxTimeInHours?: number,
   ): Promise<GoogleCalendarEvent[]> {
     const eventsResponse = await this.getFromGoogleCalendarApi<GoogleCalendarEventListApiResponse>(
-      getEventListApiEndpoint(calendar.id, minTimeInHours, maxTimeInHours),
+      getEventListApiEndpoint(calendar.id, minTimeInHours, maxTimeInHours) + "&conferenceDataVersion=1",
     );
     // @ts-ignore
     if (eventsResponse.error) {
       return [];
     }
 
-    const events = eventsResponse.items.map(
-      (item) =>
-        ({
-          id: item.id!,
-          title: item.summary!,
-          description: item.description!,
-          startTime: item.start!.date! ?? item.start!.dateTime!,
-          endTime: item.end!.date! ?? item.end!.dateTime!,
-          calendar,
-          organizerDisplayName: item.organizer?.displayName ?? item.organizer?.email,
-        }) satisfies GoogleCalendarEvent,
-    );
+    const events = eventsResponse.items.map((item) => {
+      return {
+        id: item.id!,
+        title: item.summary!,
+        description: item.description!,
+        startTime: item.start!.date! ?? item.start!.dateTime!,
+        endTime: item.end!.date! ?? item.end!.dateTime!,
+        calendar,
+        organizerDisplayName: item.organizer?.displayName ?? item.organizer?.email,
+        hasGoogleMeet: item.conferenceData?.conferenceSolution !== undefined,
+      } satisfies GoogleCalendarEvent;
+    });
     return events;
   }
 

@@ -1,9 +1,9 @@
 import { Action, ActionPanel, Color, Icon, List, Toast, showToast } from "@raycast/api";
 import { withAccessToken } from "@raycast/utils";
+import { useState } from "react";
+import { ExtensionCalendarConfigurationItem } from "./lib/config";
 import { useCalendars, useConfig } from "./lib/hooks";
 import { RaycastGoogleOAuthService } from "./lib/raycast/google-oauth-service";
-import { useMemo, useState } from "react";
-import { ExtensionCalendarConfigurationItem } from "./lib/config";
 
 function Command() {
   const { data: calendars, isLoading: isCalendarsLoading } = useCalendars();
@@ -16,26 +16,26 @@ function Command() {
     <List isShowingDetail={showDetails} isLoading={isLoading}>
       {config &&
         calendars?.map(({ id, name, timezone, description, location, backgroundColor, hidden }) => {
-          const isHidden = config!.calendarConfiguration?.[id]?.hidden;
+          const isDisabled = config!.calendarConfiguration?.[id]?.disabled;
 
           return (
             <List.Item
               key={id}
               title={name}
               accessories={[
-                isHidden
-                  ? { icon: Icon.Xmark, tag: { value: "Hidden", color: Color.Red } }
-                  : { icon: Icon.Check, tag: { value: "Visible", color: Color.Green } },
+                isDisabled
+                  ? { icon: Icon.Xmark, tag: { value: "Disabled", color: Color.Red } }
+                  : { icon: Icon.Check, tag: { value: "Enabled", color: Color.Green } },
               ]}
               actions={
                 <ActionPanel>
                   <Action
-                    title={isHidden ? "Disable" : "Enable"}
+                    title={isDisabled ? "Enable" : "Disable"}
                     onAction={() => {
                       const previousCalendarConfiguration = config?.calendarConfiguration[id];
                       const newCalendarConfiguration = {
                         ...previousCalendarConfiguration,
-                        hidden: !isHidden,
+                        disabled: !isDisabled,
                       } satisfies ExtensionCalendarConfigurationItem;
                       const newConfig = {
                         ...config,
@@ -45,7 +45,7 @@ function Command() {
                         .then(() => {
                           showToast({
                             title: "Successfully updated calendar configuration",
-                            message: `Calendar '${name}' is now ${isHidden ? "hidden" : "visible"}`,
+                            message: `Calendar '${name}' is now ${isDisabled ? "hidden" : "visible"}`,
                             style: Toast.Style.Success,
                           });
                         })

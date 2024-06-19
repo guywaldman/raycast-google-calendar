@@ -16,6 +16,7 @@ export interface GoogleCalendarEvent {
   endTime: string;
   calendar: GoogleCalendar;
   organizerDisplayName?: string;
+  hasGoogleMeet: boolean;
 }
 
 export interface GoogleCalendarEventCreationRequest {

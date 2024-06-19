@@ -1,7 +1,7 @@
 import { LocalStorage } from "@raycast/api";
 
 export interface ExtensionCalendarConfigurationItem {
-  hidden: boolean;
+  disabled: boolean;
 }
 
 export interface ExtensionConfig {

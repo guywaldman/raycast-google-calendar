@@ -1,6 +1,6 @@
-import { Action, ActionPanel, Color, List, Toast, showToast } from "@raycast/api";
+import { Action, ActionPanel, Color, Icon, List, Toast, showToast } from "@raycast/api";
 import { getAccessToken, withAccessToken } from "@raycast/utils";
-import { format, intervalToDuration, formatDistance } from "date-fns";
+import { format, intervalToDuration, formatDistance, formatDuration } from "date-fns";
 import { useConfig, useUpcomingEvents } from "./lib/hooks";
 import { RaycastGoogleOAuthService } from "./lib/raycast/google-oauth-service";
 import { GoogleCalendarEvent } from "./lib/models";
@@ -8,7 +8,7 @@ import { useMemo, useState } from "react";
 import { GoogleCalendarClient } from "./lib/api-client";
 
 function Command() {
-  const { data: events, isLoading: isEventsLoading } = useUpcomingEvents();
+  const { data: events, isLoading: isEventsLoading, revalidate: refreshEvents } = useUpcomingEvents();
   const { value: config, isLoading: isConfigLoading } = useConfig();
   const [showDetails, setShowDetails] = useState(false);
 
@@ -17,7 +17,7 @@ function Command() {
     if (!events) {
       return null;
     }
-    const filteredEvents = events.filter((event) => !config?.calendarConfiguration?.[event.calendar.id]?.hidden);
+    const filteredEvents = events.filter((event) => !config?.calendarConfiguration?.[event.calendar.id]?.disabled);
     const timeNow = new Date().getTime();
     const startOfDayNow = new Date(timeNow).setHours(0, 0, 0, 0);
     const eventsByDay = filteredEvents.reduce(
@@ -67,22 +67,45 @@ function Command() {
             <List.Section key={dayTitle} title={dayTitle}>
               {eventsInSection?.map((event) => {
                 const { id, title, startTime, endTime, calendar, organizerDisplayName } = event;
-                const startDateFormatted = startTime && format(startTime, "HH:mm MMM d, yyyy");
-                const timeFromNow =
-                  startTime && formatDistance(startTime, new Date(), { addSuffix: false }).replace("about ", "");
-                const isToday = day === "Today";
+                const startHour = startTime && format(startTime, "HH:mm");
+                const endHour = endTime && format(endTime, "HH:mm");
                 const allDayEvent = intervalToDuration({ start: startTime, end: endTime }).days! >= 1;
-                const duration = startTime && endTime && formatDistance(startTime, endTime, { addSuffix: false });
+
+                const accesories: List.Item.Accessory[] = [];
+
+                if (event.hasGoogleMeet) {
+                  accesories.push({
+                    icon: { source: Icon.TwoPeople, tintColor: Color.Blue },
+                    text: { value: "Meeting", color: Color.Blue },
+                  });
+                }
+                if (!allDayEvent) {
+                  let color = Color.Green;
+                  const hoursUntilEvent = (new Date(startTime).getTime() - new Date().getTime()) / (1000 * 60 * 60);
+                  if (hoursUntilEvent < 4) {
+                    color = Color.Red;
+                  } else if (hoursUntilEvent < 12) {
+                    color = Color.Orange;
+                  }
+                  accesories.push({
+                    icon: { source: Icon.Clock, tintColor: color },
+                    date: { value: new Date(startTime), color },
+                  });
+                }
+
+                const durationFormatted =
+                  startTime &&
+                  endTime &&
+                  formatDuration(intervalToDuration({ start: startTime, end: endTime }), {
+                    format: ["hours", "minutes"],
+                  });
 
                 return (
                   <List.Item
                     key={id}
                     title={title}
-                    subtitle={allDayEvent ? "All day event" : isToday ? `Starts in ${timeFromNow}` : ""}
-                    accessories={[
-                      { tag: calendar.name ?? "" },
-                      { text: { value: allDayEvent ? "" : startDateFormatted, color: Color.SecondaryText } },
-                    ]}
+                    subtitle={allDayEvent ? "All day" : `${startHour} - ${endHour} (${durationFormatted})`}
+                    accessories={accesories}
                     actions={
                       <ActionPanel>
                         <Action title="Toggle details" onAction={() => setShowDetails(!showDetails)} />
@@ -96,6 +119,7 @@ function Command() {
                                 title: "Event deleted",
                                 style: Toast.Style.Success,
                               });
+                              refreshEvents();
                             } catch (error) {
                               console.error(error);
                               await showToast({
