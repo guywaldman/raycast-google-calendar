@@ -18,7 +18,7 @@ interface FormValues {
 
 function Command(props: LaunchProps<{ arguments: Arguments.CreateEvent }>) {
   const { value: config, setValue: updateConfig, isLoading: isConfigLoading } = useConfig();
-  const { data: calendars, isLoading: isCalendarsLoading } = useCalendars();
+  const { data: calendarsData, isLoading: isCalendarsLoading } = useCalendars();
   const [durationValues, setDurationValues] = useState(DefaultDurationValues);
   const {
     title: titleFromArguments,
@@ -26,11 +26,14 @@ function Command(props: LaunchProps<{ arguments: Arguments.CreateEvent }>) {
     eventDuration: eventDurationFromArguments,
   } = props.arguments;
 
-  const sortedCalendars = useMemo(() => {
-    if (!calendars || !config) {
+  const calendars = useMemo(() => {
+    if (!calendarsData || !config) {
       return null;
     }
-    const sortedCalendars = calendars.sort((a, b) => {
+    const filteredCalendars = calendarsData.filter(
+      (calendar) => !config?.calendarConfiguration?.[calendar.id]?.disabled,
+    );
+    const sortedCalendars = filteredCalendars.sort((a, b) => {
       const aDisabled = config?.calendarConfiguration?.[a.id]?.disabled;
       const bDisabled = config?.calendarConfiguration?.[b.id]?.disabled;
 
@@ -43,9 +46,9 @@ function Command(props: LaunchProps<{ arguments: Arguments.CreateEvent }>) {
       }
     });
     return sortedCalendars;
-  }, [calendars, config]);
+  }, [calendarsData, config]);
 
-  const isLoading = isCalendarsLoading || isConfigLoading;
+  const isLoading = isCalendarsLoading || isConfigLoading || !calendars;
 
   return (
     <Form
@@ -61,7 +64,7 @@ function Command(props: LaunchProps<{ arguments: Arguments.CreateEvent }>) {
                 description: values.eventDescription,
                 durationInMinutes: values.eventDuration,
                 startTime: values.eventStart,
-                calendar: sortedCalendars![0],
+                calendar: calendars![0],
               });
               await showToast({
                 title: "Event created",
@@ -73,7 +76,7 @@ function Command(props: LaunchProps<{ arguments: Arguments.CreateEvent }>) {
         </ActionPanel>
       }
     >
-      {sortedCalendars && config && (
+      {calendars && config && (
         <>
           <Form.TextField id="eventTitle" title="Event Title" defaultValue={titleFromArguments} />
           <Form.TextArea id="eventDescription" title="Event Description" />
@@ -108,8 +111,7 @@ function Command(props: LaunchProps<{ arguments: Arguments.CreateEvent }>) {
               return <Form.Dropdown.Item key={duration} title={formattedDuration} value={duration.toString()} />;
             })}
           </Form.Dropdown>
-          <Form.TagPicker id="attendees" title="Event Attendees" defaultValue={[]}></Form.TagPicker>
-          <Form.Dropdown id="calendarId" title="Calendar" defaultValue={sortedCalendars![0].id}>
+          <Form.Dropdown id="calendarId" title="Calendar" defaultValue={calendars![0].id}>
             {calendars?.map((calendar) => (
               <Form.Dropdown.Item key={calendar.id} title={calendar.name} value={calendar.id} />
             ))}

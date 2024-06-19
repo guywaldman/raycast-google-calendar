@@ -1,3 +1,4 @@
+import { formatISO } from "date-fns/formatISO";
 import fetch from "node-fetch";
 import {
   GoogleCalendar,
@@ -6,7 +7,6 @@ import {
   GoogleCalendarEventListApiResponse,
   GoogleCalendarListApiResponse,
 } from "./models";
-import { formatISO } from "date-fns/formatISO";
 
 // https://developers.google.com/calendar/api/v3/reference/calendarList/list
 const API_LIST_CALENDARS_URL = "https://www.googleapis.com/calendar/v3/users/me/calendarList?showHidden=true";
@@ -33,6 +33,7 @@ export function getEventListApiEndpoint(
   return endpoint;
 }
 
+/** A client for interacting with the Google Calendar API. */
 export class GoogleCalendarClient {
   constructor(private token: string) {}
 
@@ -50,6 +51,7 @@ export class GoogleCalendarClient {
     }));
   }
 
+  /** Returns the events for the given calendar, between the given time range. */
   async getEvents(
     calendar: GoogleCalendar,
     minTimeInHours?: number,
@@ -78,11 +80,13 @@ export class GoogleCalendarClient {
     return events;
   }
 
+  /** Returns the upcoming events for the given calendar. */
   async getUpcomingEvents(calendar: GoogleCalendar): Promise<GoogleCalendarEvent[]> {
     const events = await this.getEvents(calendar, 0, 24 * 7);
     return events;
   }
 
+  /** Creates a new event for the given calendar. */
   async createEvent(event: GoogleCalendarEventCreationRequest): Promise<void> {
     const endTime = event.startTime.getTime() + event.durationInMinutes * 60 * 1000;
 
@@ -97,15 +101,6 @@ export class GoogleCalendarClient {
         timeZone: event.calendar.timezone,
       },
       description: event.description,
-      // Below requires ?conferenceDataVersion=1
-      // conferenceData: {
-      //   createRequest: {
-      //     conferenceSolutionKey: {
-      //       type: "hangoutsMeet",
-      //     },
-      //     requestId: "some-random-string",
-      //   },
-      // },
     };
     await this.postToGoogleCalendarApi<any>(
       API_CREATE_EVENT_URL.replace("{calendarId}", event.calendar.id),
@@ -113,6 +108,7 @@ export class GoogleCalendarClient {
     );
   }
 
+  /** Deletes the given event for the given calendar. */
   async deleteEvent(eventId: string, calendarId: string): Promise<void> {
     await this.deleteFromGoogleCalendarApi<any>(
       API_DELETE_EVENT_URL.replace("{calendarId}", calendarId).replace("{eventId}", eventId),
