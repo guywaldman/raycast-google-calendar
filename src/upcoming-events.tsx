@@ -145,9 +145,12 @@ function Command() {
 export default withAccessToken({ authorize: RaycastGoogleOAuthService.authorize })(Command);
 
 function ListItemMetadata({ event }: { event: GoogleCalendarEvent }) {
-  const { id, title, startTime, endTime, calendar, organizerDisplayName } = event;
+  const { id, title, startTime, endTime, description, calendar, organizer } = event;
   const startDateFormatted = startTime && format(startTime, "HH:mm MMM d, yyyy");
   const endDateFormatted = endTime && format(endTime, "HH:mm MMM d, yyyy");
+  const duration = formatDuration(intervalToDuration({ start: startTime, end: endTime }), {
+    format: ["hours", "minutes"],
+  });
   return (
     <List.Item.Detail
       metadata={
@@ -155,8 +158,40 @@ function ListItemMetadata({ event }: { event: GoogleCalendarEvent }) {
           <List.Item.Detail.Metadata.Label title={title} />
           <List.Item.Detail.Metadata.Separator />
 
-          {startDateFormatted && <List.Item.Detail.Metadata.Label title="Start" text={startDateFormatted} />}
-          {endDateFormatted && <List.Item.Detail.Metadata.Label title="End" text={endDateFormatted} />}
+          <List.Item.Detail.Metadata.Label title="Description" text={description} />
+          <List.Item.Detail.Metadata.Label title="Start" text={startDateFormatted} />
+          <List.Item.Detail.Metadata.Label title="End" text={endDateFormatted} />
+          <List.Item.Detail.Metadata.Label title="Duration" text={duration} />
+          <List.Item.Detail.Metadata.Label title="Organizer" text={organizer?.displayName ?? organizer?.email ?? ""} />
+          <List.Item.Detail.Metadata.Label title="Calendar" text={calendar.name} />
+          <List.Item.Detail.Metadata.Separator />
+          <List.Item.Detail.Metadata.Label title="Attendees" />
+          {event.attendees?.map((attendee) => {
+            let rsvp = "No Response";
+            let icon = Icon.QuestionMark;
+            let color = Color.SecondaryText;
+            const isOrganizer = attendee.email === organizer?.email;
+            if (isOrganizer) {
+              rsvp = "Organizer";
+              color = Color.SecondaryText;
+            } else if (attendee.responseStatus === "accepted") {
+              rsvp = "Accepted";
+              icon = Icon.Check;
+              color = Color.Green;
+            } else if (attendee.responseStatus === "declined") {
+              rsvp = "Declined";
+              icon = Icon.Xmark;
+              color = Color.Red;
+            }
+            return (
+              <List.Item.Detail.Metadata.Label
+                key={attendee.email}
+                title={attendee.displayName ?? attendee.email ?? ""}
+                icon={isOrganizer ? undefined : { source: icon, tintColor: color }}
+                text={{ value: rsvp, color }}
+              />
+            );
+          })}
         </List.Item.Detail.Metadata>
       }
     />

@@ -15,8 +15,18 @@ export interface GoogleCalendarEvent {
   startTime: string;
   endTime: string;
   calendar: GoogleCalendar;
-  organizerDisplayName?: string;
-  hasGoogleMeet: boolean;
+  organizer?: {
+    displayName?: string;
+    email?: string;
+  };
+  googleMeet?: {
+    link: string;
+  };
+  attendees?: {
+    displayName?: string;
+    email?: string;
+    responseStatus?: string;
+  }[];
 }
 
 export interface GoogleCalendarEventCreationRequest {

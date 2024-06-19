@@ -12,21 +12,21 @@
   "commands": [
     {
       "name": "calendars",
-      "title": "List Google Calendars",
+      "title": "List Calendars",
       "subtitle": "List all your Google Calendars",
       "description": "List all your Google Calendars",
       "mode": "view"
     },
     {
       "name": "upcoming-events",
-      "title": "Upcoming Google Calendar Events",
+      "title": "Upcoming Events",
       "subtitle": "List upcoming events from your Google Calendars",
       "description": "List upcoming events from your Google Calendars",
       "mode": "view"
     },
     {
       "name": "create-event",
-      "title": "Create Google Calendar Event",
+      "title": "Create Event",
       "subtitle": "Create a new Google Calendar Event",
       "description": "Create a new Google Calendar Event",
       "mode": "view",
@@ -59,12 +59,10 @@
     }
   ],
   "dependencies": {
-    "@google-cloud/local-auth": "^3.0.1",
     "@raycast/api": "^1.76.1",
     "@raycast/utils": "^1.16.0",
     "chrono-node": "^2.7.6",
     "date-fns": "^3.6.0",
-    "googleapis": "^140.0.0",
     "node-fetch": "^3.3.2"
   },
   "devDependencies": {

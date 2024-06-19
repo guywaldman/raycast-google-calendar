@@ -73,8 +73,17 @@ export class GoogleCalendarClient {
         startTime: item.start!.date! ?? item.start!.dateTime!,
         endTime: item.end!.date! ?? item.end!.dateTime!,
         calendar,
-        organizerDisplayName: item.organizer?.displayName ?? item.organizer?.email,
-        hasGoogleMeet: item.conferenceData?.conferenceSolution !== undefined,
+        organizer: item.organizer,
+        googleMeet: item.hangoutLink
+          ? {
+              link: item.hangoutLink,
+            }
+          : undefined,
+        attendees: item.attendees?.map((attendee) => ({
+          displayName: attendee.displayName,
+          email: attendee.email,
+          responseStatus: attendee.responseStatus,
+        })),
       } satisfies GoogleCalendarEvent;
     });
     return events;
