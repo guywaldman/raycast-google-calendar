@@ -3,7 +3,7 @@
   "name": "google-calendar",
   "title": "Google Calendar",
   "description": "Raycast extension to manage Google Calendar",
-  "icon": "command-icon.png",
+  "icon": "extension-icon.png",
   "author": "guy_waldman",
   "categories": [
     "Productivity"

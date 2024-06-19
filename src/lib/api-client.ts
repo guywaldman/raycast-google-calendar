@@ -96,6 +96,16 @@ export class GoogleCalendarClient {
         dateTime: formatISO(endTime),
         timeZone: event.calendar.timezone,
       },
+      description: event.description,
+      // Below requires ?conferenceDataVersion=1
+      // conferenceData: {
+      //   createRequest: {
+      //     conferenceSolutionKey: {
+      //       type: "hangoutsMeet",
+      //     },
+      //     requestId: "some-random-string",
+      //   },
+      // },
     };
     await this.postToGoogleCalendarApi<any>(
       API_CREATE_EVENT_URL.replace("{calendarId}", event.calendar.id),
