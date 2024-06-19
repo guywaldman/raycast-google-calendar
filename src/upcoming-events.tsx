@@ -66,17 +66,25 @@ function Command() {
           return (
             <List.Section key={dayTitle} title={dayTitle}>
               {eventsInSection?.map((event) => {
-                const { id, title, startTime, endTime, calendar, organizerDisplayName } = event;
+                const { id, title, startTime, endTime, organizer, calendar } = event;
                 const startHour = startTime && format(startTime, "HH:mm");
                 const endHour = endTime && format(endTime, "HH:mm");
                 const allDayEvent = intervalToDuration({ start: startTime, end: endTime }).days! >= 1;
 
                 const accesories: List.Item.Accessory[] = [];
 
-                if (event.hasGoogleMeet) {
+                const attendees = event.attendees?.filter((attendee) => attendee.email !== organizer?.email);
+
+                if (event.googleMeet) {
                   accesories.push({
                     icon: { source: Icon.TwoPeople, tintColor: Color.Blue },
                     text: { value: "Meeting", color: Color.Blue },
+                  });
+                }
+                if (attendees && attendees.length > 0) {
+                  accesories.push({
+                    icon: { source: Icon.Person, tintColor: Color.SecondaryText },
+                    text: { value: attendees!.length.toString(), color: Color.SecondaryText },
                   });
                 }
                 if (!allDayEvent) {
@@ -167,13 +175,17 @@ function ListItemMetadata({ event }: { event: GoogleCalendarEvent }) {
           <List.Item.Detail.Metadata.Separator />
           <List.Item.Detail.Metadata.Label title="Attendees" />
           {event.attendees?.map((attendee) => {
-            let rsvp = "No Response";
-            let icon = Icon.QuestionMark;
+            let rsvp = "No response";
+            let icon: Icon | null = null;
             let color = Color.SecondaryText;
             const isOrganizer = attendee.email === organizer?.email;
             if (isOrganizer) {
               rsvp = "Organizer";
               color = Color.SecondaryText;
+            } else if (attendee.responseStatus === "tentative") {
+              rsvp = "Tentative";
+              icon = Icon.QuestionMark;
+              color = Color.Orange;
             } else if (attendee.responseStatus === "accepted") {
               rsvp = "Accepted";
               icon = Icon.Check;
@@ -187,7 +199,7 @@ function ListItemMetadata({ event }: { event: GoogleCalendarEvent }) {
               <List.Item.Detail.Metadata.Label
                 key={attendee.email}
                 title={attendee.displayName ?? attendee.email ?? ""}
-                icon={isOrganizer ? undefined : { source: icon, tintColor: color }}
+                icon={icon ? { source: icon, tintColor: color } : null}
                 text={{ value: rsvp, color }}
               />
             );
