@@ -9,6 +9,16 @@
     "Productivity"
   ],
   "license": "MIT",
+  "preferences": [
+    {
+      "description": "The client ID for your Google Calendar API",
+      "id": "googleClientId",
+      "name": "googleClientId",
+      "required": true,
+      "title": "Google Client ID",
+      "type": "textfield"
+    }
+  ],
   "commands": [
     {
       "name": "calendars",
