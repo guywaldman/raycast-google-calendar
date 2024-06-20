@@ -1,6 +1,6 @@
 import { Action, ActionPanel, Color, Icon, List, Toast, showToast } from "@raycast/api";
 import { withAccessToken } from "@raycast/utils";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ExtensionCalendarConfigurationItem } from "@/lib/extension/config";
 import { useCalendars, useConfig } from "@/lib/extension/hooks";
 import { RaycastGoogleOAuthService } from "@/lib/gcal/raycast-google-auth-service";
@@ -10,23 +10,55 @@ function Command() {
   const { value: config, setValue: updateConfig, isLoading: isConfigLoading } = useConfig();
   const [showDetails, setShowDetails] = useState(false);
 
+  const sortedCalendars = useMemo(() => {
+    if (!calendars) {
+      return null;
+    }
+    return calendars.sort((a, b) => {
+      const aDisabled = config?.calendarConfiguration?.[a.id]?.disabled;
+      const bDisabled = config?.calendarConfiguration?.[b.id]?.disabled;
+
+      if (aDisabled && !bDisabled) {
+        return 1;
+      } else if (!aDisabled && bDisabled) {
+        return -1;
+      } else {
+        return a.name.localeCompare(b.name);
+      }
+    });
+  }, [calendars, config]);
+
   const isLoading = isCalendarsLoading || isConfigLoading;
 
   return (
     <List isShowingDetail={showDetails} isLoading={isLoading}>
       {config &&
-        calendars?.map(({ id, name, timezone, description, location, backgroundColor, hidden }) => {
+        sortedCalendars?.map(({ id, name, timezone, description, location, backgroundColor, hidden }) => {
           const isDisabled = config!.calendarConfiguration?.[id]?.disabled;
+
+          const accessories: List.Item.Accessory[] = [];
+          if (hidden) {
+            accessories.push({
+              icon: Icon.EyeDisabled,
+              tag: { value: "Hidden", color: Color.SecondaryText },
+              tooltip: "Calendar is configured as hidden in Google Calendar",
+            });
+          }
+          if (isDisabled) {
+            accessories.push({
+              icon: Icon.Xmark,
+              tag: { value: "Disabled", color: Color.Red },
+              tooltip: "Events from this calendar are filtered out in the extension",
+            });
+          } else {
+            accessories.push({ icon: Icon.Check, tag: { value: "Enabled", color: Color.Green } });
+          }
 
           return (
             <List.Item
               key={id}
               title={name}
-              accessories={[
-                isDisabled
-                  ? { icon: Icon.Xmark, tag: { value: "Disabled", color: Color.Red } }
-                  : { icon: Icon.Check, tag: { value: "Enabled", color: Color.Green } },
-              ]}
+              accessories={accessories}
               actions={
                 <ActionPanel>
                   <Action
@@ -58,7 +90,7 @@ function Command() {
                         });
                     }}
                   />
-                  <Action title="Toggle details" onAction={() => setShowDetails(!showDetails)} />
+                  <Action title="Toggle Details" onAction={() => setShowDetails(!showDetails)} />
                 </ActionPanel>
               }
               detail={

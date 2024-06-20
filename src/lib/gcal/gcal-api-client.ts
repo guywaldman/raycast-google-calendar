@@ -57,6 +57,10 @@ export class GoogleCalendarClient {
     }
 
     const events = eventsResponse.items.map((item) => {
+      if (item.hangoutLink) {
+        console.log({ item: JSON.stringify(item, null, 2) });
+      }
+
       return {
         id: item.id!,
         title: item.summary!,

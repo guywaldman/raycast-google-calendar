@@ -1,7 +1,7 @@
 import { GoogleCalendarClient } from "@/lib/gcal/gcal-api-client";
 import { Action, ActionPanel, Color, Icon, List, Toast, showToast } from "@raycast/api";
 import { getAccessToken, withAccessToken } from "@raycast/utils";
-import { format, formatDuration, intervalToDuration } from "date-fns";
+import { format, formatDistanceToNow, formatDuration, intervalToDuration } from "date-fns";
 import { useMemo, useState } from "react";
 import { useConfig, useUpcomingEvents } from "./lib/extension/hooks";
 import { GoogleCalendarEvent } from "./lib/gcal/models";
@@ -62,85 +62,12 @@ function Command() {
       {config &&
         eventsByDay &&
         eventsByDay.map(([day, eventsInSection]) => {
-          const dayTitle = formatDayName(parseInt(day));
+          const { dayName, dayDisplayName } = formatDayName(parseInt(day));
           return (
-            <List.Section key={dayTitle} title={dayTitle}>
+            <List.Section key={day} title={dayDisplayName ?? dayName} subtitle={dayDisplayName ? dayName : undefined}>
               {eventsInSection?.map((event) => {
-                const { id, title, startTime, endTime, organizer, calendar } = event;
-                const startHour = startTime && format(startTime, "HH:mm");
-                const endHour = endTime && format(endTime, "HH:mm");
-                const allDayEvent = intervalToDuration({ start: startTime, end: endTime }).days! >= 1;
-
-                const accesories: List.Item.Accessory[] = [];
-
-                const attendees = event.attendees?.filter((attendee) => attendee.email !== organizer?.email);
-
-                if (event.googleMeet) {
-                  accesories.push({
-                    icon: { source: Icon.TwoPeople, tintColor: Color.Blue },
-                    text: { value: "Meeting", color: Color.Blue },
-                  });
-                }
-                if (attendees && attendees.length > 0) {
-                  accesories.push({
-                    icon: { source: Icon.Person, tintColor: Color.SecondaryText },
-                    text: { value: attendees!.length.toString(), color: Color.SecondaryText },
-                  });
-                }
-                if (!allDayEvent) {
-                  let color = Color.Green;
-                  const hoursUntilEvent = (new Date(startTime).getTime() - new Date().getTime()) / (1000 * 60 * 60);
-                  if (hoursUntilEvent < 4) {
-                    color = Color.Red;
-                  } else if (hoursUntilEvent < 12) {
-                    color = Color.Orange;
-                  }
-                  accesories.push({
-                    icon: { source: Icon.Clock, tintColor: color },
-                    date: { value: new Date(startTime), color },
-                  });
-                }
-
-                const durationFormatted =
-                  startTime &&
-                  endTime &&
-                  formatDuration(intervalToDuration({ start: startTime, end: endTime }), {
-                    format: ["hours", "minutes"],
-                  });
-
                 return (
-                  <List.Item
-                    key={id}
-                    title={title}
-                    subtitle={allDayEvent ? "All day" : `${startHour} - ${endHour} (${durationFormatted})`}
-                    accessories={accesories}
-                    actions={
-                      <ActionPanel>
-                        <Action title="Toggle details" onAction={() => setShowDetails(!showDetails)} />
-                        <Action
-                          title="Delete"
-                          onAction={async () => {
-                            const apiClient = new GoogleCalendarClient(getAccessToken().token);
-                            try {
-                              await apiClient.deleteEvent(id, calendar.id);
-                              await showToast({
-                                title: "Event deleted",
-                                style: Toast.Style.Success,
-                              });
-                              refreshEvents();
-                            } catch (error) {
-                              console.error(error);
-                              await showToast({
-                                title: "Failed to delete event",
-                                style: Toast.Style.Failure,
-                              });
-                            }
-                          }}
-                        />
-                      </ActionPanel>
-                    }
-                    detail={<ListItemMetadata event={event} />}
-                  />
+                  <ListItem key={event.id} event={event} onToggleDetails={() => setShowDetails(!showDetails)} refreshData={refreshEvents} />
                 );
               })}
             </List.Section>
@@ -210,15 +137,122 @@ function ListItemMetadata({ event }: { event: GoogleCalendarEvent }) {
   );
 }
 
-function formatDayName(daysFromNow: number): string {
+function formatDayName(daysFromNow: number): { dayName: string; dayDisplayName?: string } {
   const now = new Date();
   const weekDayTime = now.getTime() + daysFromNow * 24 * 60 * 60 * 1000;
   const weekDayName = format(weekDayTime, "EEEE");
   if (daysFromNow === 0) {
-    return `Today (${weekDayName})`;
+    return { dayDisplayName: "Today", dayName: weekDayName };
   }
   if (daysFromNow === 1) {
-    return `Tomorrow (${weekDayName})`;
+    return { dayDisplayName: "Tomorrow", dayName: weekDayName };
   }
-  return weekDayName;
+  return { dayDisplayName: undefined, dayName: weekDayName };
+}
+
+function ListItem({
+  event,
+  onToggleDetails,
+  refreshData,
+}: {
+  event: GoogleCalendarEvent;
+  onToggleDetails: () => void;
+  refreshData: () => void;
+}) {
+  const { id, title, startTime, endTime, organizer, calendar } = event;
+  const startHour = startTime && format(startTime, "HH:mm");
+  const endHour = endTime && format(endTime, "HH:mm");
+  const allDayEvent = intervalToDuration({ start: startTime, end: endTime }).days! >= 1;
+
+  const accesories: List.Item.Accessory[] = [];
+
+  const attendees = event.attendees?.filter((attendee) => attendee.email !== organizer?.email);
+
+  if (event.googleMeet) {
+    accesories.push({
+      icon: { source: Icon.TwoPeople, tintColor: Color.Blue },
+      tag: { value: "Meeting", color: Color.Blue },
+    });
+  }
+  if (attendees && attendees.length > 0) {
+    accesories.push({
+      icon: { source: Icon.Person, tintColor: Color.SecondaryText },
+      text: { value: attendees!.length.toString(), color: Color.SecondaryText },
+    });
+  }
+
+  if (!allDayEvent) {
+    let color = Color.Green;
+    const hoursUntilEvent = (new Date(startTime).getTime() - new Date().getTime()) / (1000 * 60 * 60);
+    if (hoursUntilEvent < 4) {
+      color = Color.Red;
+    } else if (hoursUntilEvent < 12) {
+      color = Color.Orange;
+    }
+
+    const ongoing = hoursUntilEvent < 0;
+    if (!ongoing) {
+      accesories.push({
+        icon: { source: Icon.Clock, tintColor: color },
+        date: { value: new Date(startTime), color },
+      });
+    } else {
+      const formattedTime = formatDuration(intervalToDuration({ start: startTime, end: new Date() }), {
+        format: ["hours", "minutes"],
+      })
+        .replace(" hours", "h")
+        .replace(" minutes", "m");
+      accesories.push({
+        icon: { source: Icon.Livestream, tintColor: Color.Red },
+        tag: { value: "Now", color: Color.Red },
+      });
+      accesories.push({
+        text: { value: `Started ${formattedTime} ago`, color: Color.SecondaryText },
+      });
+    }
+  }
+
+  const durationFormatted =
+    startTime &&
+    endTime &&
+    formatDuration(intervalToDuration({ start: startTime, end: endTime }), {
+      format: ["hours", "minutes"],
+    });
+
+  return (
+    <List.Item
+      key={id}
+      title={title}
+      subtitle={allDayEvent ? "All day" : `${startHour} - ${endHour} (${durationFormatted})`}
+      accessories={accesories}
+      actions={
+        <ActionPanel>
+          {event.googleMeet && <Action.OpenInBrowser title="Join Meeting" url={event.googleMeet.link} />}
+          <Action title="Toggle details" onAction={() => onToggleDetails()} />
+          <Action
+            title="Delete"
+            onAction={async () => {
+              const apiClient = new GoogleCalendarClient(getAccessToken().token);
+
+              try {
+                await apiClient.deleteEvent(id, calendar.id);
+                await showToast({
+                  title: "Event deleted",
+                  style: Toast.Style.Success,
+                });
+                refreshData();
+              } catch (error) {
+                console.error(error);
+                await showToast({
+                  title: "Failed to delete event",
+                  style: Toast.Style.Failure,
+                });
+              }
+            }}
+          />
+        </ActionPanel>
+      }
+      detail={<ListItemMetadata event={event} />}
+    />
+  );
 }
