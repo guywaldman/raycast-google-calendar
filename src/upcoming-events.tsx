@@ -1,7 +1,7 @@
 import { GoogleCalendarClient } from "@/lib/gcal/gcal-api-client";
-import { Action, ActionPanel, Color, Icon, List, Toast, showToast } from "@raycast/api";
+import { Action, ActionPanel, Color, Icon, Keyboard, List, Toast, showToast } from "@raycast/api";
 import { getAccessToken, withAccessToken } from "@raycast/utils";
-import { format, formatDuration, intervalToDuration } from "date-fns";
+import { Duration, format, formatDuration, intervalToDuration } from "date-fns";
 import { useMemo, useState } from "react";
 import { useConfig, useUpcomingEvents } from "./lib/extension/hooks";
 import { GoogleCalendarEvent } from "./lib/gcal/models";
@@ -80,7 +80,7 @@ function Command() {
 export default withAccessToken({ authorize: RaycastGoogleOAuthService.authorize })(Command);
 
 function ListItemMetadata({ event }: { event: GoogleCalendarEvent }) {
-  const { id, title, startTime, endTime, description, calendar, organizer } = event;
+  const { title, startTime, endTime, description, calendar, organizer } = event;
   const startDateFormatted = startTime && format(startTime, "HH:mm MMM d, yyyy");
   const endDateFormatted = endTime && format(endTime, "HH:mm MMM d, yyyy");
   const duration = formatDuration(intervalToDuration({ start: startTime, end: endTime }), {
@@ -197,11 +197,7 @@ function ListItem({
         date: { value: new Date(startTime), color },
       });
     } else {
-      const formattedTime = formatDuration(intervalToDuration({ start: startTime, end: new Date() }), {
-        format: ["hours", "minutes"],
-      })
-        .replace(" hours", "h")
-        .replace(" minutes", "m");
+      const formattedTime = formatTime(new Date(startTime), new Date());
       accesories.push({
         icon: { source: Icon.Livestream, tintColor: Color.Red },
         tag: { value: "Now", color: Color.Red },
@@ -212,23 +208,26 @@ function ListItem({
     }
   }
 
-  const durationFormatted =
-    startTime &&
-    endTime &&
-    formatDuration(intervalToDuration({ start: startTime, end: endTime }), {
-      format: ["hours", "minutes"],
-    });
+  let subtitle = "All day";
+  if (startTime && endTime) {
+    const formattedDuration = formatTime(new Date(startTime), new Date(endTime));
+    if (formattedDuration) {
+      subtitle = `${startHour} - ${endHour} (${formattedDuration})`;
+    } else {
+      subtitle = `${startHour} - ${endHour}`;
+    }
+  }
 
   return (
     <List.Item
       key={id}
       title={title}
-      subtitle={allDayEvent ? "All day" : `${startHour} - ${endHour} (${durationFormatted})`}
+      subtitle={subtitle}
       accessories={accesories}
       actions={
         <ActionPanel>
+          <Action title="Toggle Details" onAction={() => onToggleDetails()} />
           {event.googleMeet && <Action.OpenInBrowser title="Join Meeting" url={event.googleMeet.link} />}
-          <Action title="Toggle details" onAction={() => onToggleDetails()} />
           <Action
             title="Delete"
             onAction={async () => {
@@ -255,4 +254,21 @@ function ListItem({
       detail={<ListItemMetadata event={event} />}
     />
   );
+}
+
+function formatTime(startTime: Date, endTime: Date): string | null {
+  let duration: Duration | null = null;
+  let formattedDuration = "";
+  if (startTime && endTime) {
+    duration = intervalToDuration({ start: startTime, end: endTime });
+    if ((!duration.hours || duration.hours < 1) && duration.minutes! > 0) {
+      return `${duration.minutes}m`;
+    }
+    formattedDuration = duration.hours!.toString();
+    if (duration.minutes) {
+      formattedDuration += `:${duration.minutes}`;
+    }
+    formattedDuration += "h";
+  }
+  return formattedDuration;
 }
