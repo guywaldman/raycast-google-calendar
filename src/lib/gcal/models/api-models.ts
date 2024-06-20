@@ -169,7 +169,7 @@ export interface GoogleCalendarEventListApiItemResponse {
   };
   workingLocationProperties?: {
     type?: string;
-    homeOffice?: any;
+    homeOffice?: unknown;
     customLocation?: {
       label?: string;
     };
@@ -198,4 +198,70 @@ export interface GoogleCalendarEventListApiItemResponse {
     fileId?: string;
   }[];
   eventType?: string;
+}
+
+// https://developers.google.com/calendar/api/v3/reference/events/insert
+export interface GoogleCalendarApiCreateEventRequest {
+  summary: string;
+  description: string;
+  start: {
+    dateTime?: string;
+    date?: string;
+    timeZone?: string;
+  };
+  end: {
+    dateTime?: string;
+    date?: string;
+    timeZone?: string;
+  };
+}
+
+// https://developers.google.com/tasks/reference/rest/v1/tasklists/list
+export interface GoogleCalendarTaskListApiResponse {
+  kind?: string;
+  etag?: string;
+  items: GoogleCalendarTaskListApiItemResponse[];
+}
+
+// https://developers.google.com/tasks/reference/rest/v1/tasklists#TaskList
+export interface GoogleCalendarTaskListApiItemResponse {
+  kind: string;
+  id: string;
+  etag: string;
+  title: string;
+  updated: string;
+  selfLink: string;
+}
+
+// https://developers.google.com/tasks/reference/rest/v1/tasks/list
+export interface GoogleCalendarTasksApiResponse {
+  kind?: string;
+  etag?: string;
+  items: GoogleCalendarTasksApiItemResponse[];
+}
+
+//https://developers.google.com/tasks/reference/rest/v1/tasks#Task
+export interface GoogleCalendarTasksApiItemResponse {
+  kind: string;
+  id: string;
+  etag: string;
+  title: string;
+  updated: string;
+  selfLink: string;
+  parent: string;
+  position: string;
+  notes: string;
+  status: string;
+  due: string;
+  completed: string;
+  deleted: boolean;
+  hidden: boolean;
+  links: [
+    {
+      type: string;
+      description: string;
+      link: string;
+    },
+  ];
+  webViewLink: string;
 }

@@ -24,6 +24,14 @@ export function useUpcomingEvents() {
   });
 }
 
+export function useUpcomingTasks() {
+  const apiClient = new GoogleCalendarClient(getAccessToken().token);
+  return useCache(async () => {
+    const tasks = await apiClient.getUpcomingTasks();
+    return tasks;
+  });
+}
+
 export function useConfig(): {
   value: ExtensionConfig | undefined;
   setValue: (config: ExtensionConfig) => Promise<void>;

@@ -15,7 +15,7 @@ function Command() {
   return (
     <List isShowingDetail={showDetails} isLoading={isLoading}>
       {config &&
-        calendars?.map(({ id, name, timezone, description, location, backgroundColor, hidden }) => {
+        calendars?.map(({ id, name, timezone, description, location, hidden }) => {
           const isDisabled = config!.calendarConfiguration?.[id]?.disabled;
 
           return (
@@ -58,7 +58,7 @@ function Command() {
                         });
                     }}
                   />
-                  <Action title="Toggle details" onAction={() => setShowDetails(!showDetails)} />
+                  <Action title="Toggle Details" onAction={() => setShowDetails(!showDetails)} />
                 </ActionPanel>
               }
               detail={

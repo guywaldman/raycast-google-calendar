@@ -36,3 +36,19 @@ export interface GoogleCalendarEventCreationRequest {
   durationInMinutes: number;
   calendar: GoogleCalendar;
 }
+
+export interface GoogleCalendarTaskList {
+  id: string;
+  title: string;
+}
+
+export interface GoogleCalendarTask {
+  id: string;
+  title: string;
+  status: string;
+  due: string;
+  updated: string;
+  completed: string;
+  deleted: boolean;
+  hidden: boolean;
+}

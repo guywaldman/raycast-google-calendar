@@ -2,10 +2,15 @@ import { formatISO } from "date-fns/formatISO";
 import fetch from "node-fetch";
 import {
   GoogleCalendar,
+  GoogleCalendarApiCreateEventRequest,
   GoogleCalendarEvent,
   GoogleCalendarEventCreationRequest,
   GoogleCalendarEventListApiResponse,
   GoogleCalendarListApiResponse,
+  GoogleCalendarTask,
+  GoogleCalendarTaskList,
+  GoogleCalendarTaskListApiResponse,
+  GoogleCalendarTasksApiResponse,
 } from "@/lib/gcal/models";
 
 // https://developers.google.com/calendar/api/v3/reference/calendarList/list
@@ -19,6 +24,12 @@ const API_CREATE_EVENT_URL = "https://www.googleapis.com/calendar/v3/calendars/{
 
 // https://developers.google.com/calendar/api/v3/reference/events/delete
 const API_DELETE_EVENT_URL = "https://www.googleapis.com/calendar/v3/calendars/{calendarId}/events/{eventId}";
+
+// https://developers.google.com/tasks/reference/rest/v1/tasklists/list
+const API_LIST_TASK_LISTS_URL = "https://www.googleapis.com/tasks/v1/users/@me/lists";
+
+// https://developers.google.com/tasks/reference/rest/v1/tasks/list
+const API_LIST_TASKS_URL = "https://tasks.googleapis.com/tasks/v1/lists/{tasklist}/tasks";
 
 export function getEventListApiEndpoint(calendarId: string, minTimeInHours: number = 24 * 7, maxTimeInHours: number = 0) {
   let endpoint = API_LIST_EVENTS_URL.replace("{calendarId}", calendarId);
@@ -51,7 +62,7 @@ export class GoogleCalendarClient {
     const eventsResponse = await this.getFromGoogleCalendarApi<GoogleCalendarEventListApiResponse>(
       getEventListApiEndpoint(calendar.id, minTimeInHours, maxTimeInHours) + "&conferenceDataVersion=1",
     );
-    // @ts-ignore
+    // @ts-expect-error Error is not typed correctly.
     if (eventsResponse.error) {
       return [];
     }
@@ -101,13 +112,70 @@ export class GoogleCalendarClient {
         timeZone: event.calendar.timezone,
       },
       description: event.description,
-    };
-    await this.postToGoogleCalendarApi<any>(API_CREATE_EVENT_URL.replace("{calendarId}", event.calendar.id), requestBody);
+    } satisfies GoogleCalendarApiCreateEventRequest;
+    const url = API_CREATE_EVENT_URL.replace("{calendarId}", event.calendar.id);
+    await this.postToGoogleCalendarApi<GoogleCalendarApiCreateEventRequest>(url, requestBody);
   }
 
   /** Deletes the given event for the given calendar. */
   async deleteEvent(eventId: string, calendarId: string): Promise<void> {
-    await this.deleteFromGoogleCalendarApi<any>(API_DELETE_EVENT_URL.replace("{calendarId}", calendarId).replace("{eventId}", eventId));
+    await this.deleteFromGoogleCalendarApi(API_DELETE_EVENT_URL.replace("{calendarId}", calendarId).replace("{eventId}", eventId));
+  }
+
+  async getAllTaskLists(): Promise<GoogleCalendarTaskList[]> {
+    const response = await this.getFromGoogleCalendarApi<GoogleCalendarTaskListApiResponse>(API_LIST_TASK_LISTS_URL);
+    return response.items.map((item) => ({
+      id: item.id,
+      title: item.title,
+    }));
+  }
+
+  async getAllTasks(): Promise<GoogleCalendarTask[]> {
+    const taskLists = await this.getAllTaskLists();
+    const tasks = await Promise.all(taskLists.map((taskList) => this.getTasksForTaskList(taskList)));
+    return tasks.flat();
+  }
+
+  async getUpcomingTasks(): Promise<GoogleCalendarTask[]> {
+    const taskLists = await this.getAllTaskLists();
+    const tasks = await Promise.all(taskLists.map((taskList) => this.getUpcomingTasksForTaskList(taskList)));
+    return tasks.flat();
+  }
+
+  private async getUpcomingTasksForTaskList(taskList: GoogleCalendarTaskList): Promise<GoogleCalendarTask[]> {
+    let url = API_LIST_TASKS_URL.replace("{tasklist}", taskList.id);
+    const now = new Date();
+    url += `?showCompleted=false&showDeleted=false&dueMin=${now.toISOString()}`;
+    const response = await this.getFromGoogleCalendarApi<GoogleCalendarTasksApiResponse>(url);
+    return response.items.map((item) => ({
+      id: item.id,
+      title: item.title,
+      due: item.due,
+      updated: item.updated,
+      completed: item.completed,
+      deleted: item.deleted,
+      status: item.status,
+      hidden: item.hidden,
+    }));
+  }
+
+  private async getTasksForTaskList(taskList: GoogleCalendarTaskList): Promise<GoogleCalendarTask[]> {
+    const response = await this.getFromGoogleCalendarApi<GoogleCalendarTasksApiResponse>(
+      API_LIST_TASKS_URL.replace("{tasklist}", taskList.id),
+    );
+    return response.items.map(
+      (item) =>
+        ({
+          id: item.id,
+          title: item.title,
+          due: item.due,
+          updated: item.updated,
+          completed: item.completed,
+          deleted: item.deleted,
+          status: item.status,
+          hidden: item.hidden,
+        }) satisfies GoogleCalendarTask,
+    );
   }
 
   private async getFromGoogleCalendarApi<T>(url: string): Promise<T> {
@@ -135,7 +203,7 @@ export class GoogleCalendarClient {
     }
   }
 
-  private async deleteFromGoogleCalendarApi<T>(url: string): Promise<void> {
+  private async deleteFromGoogleCalendarApi(url: string): Promise<void> {
     const response = await fetch(url, {
       method: "DELETE",
       headers: {

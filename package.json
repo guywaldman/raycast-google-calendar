@@ -18,10 +18,10 @@
       "mode": "view"
     },
     {
-      "name": "upcoming-events",
-      "title": "Upcoming Events",
-      "subtitle": "List upcoming events from your Google Calendars",
-      "description": "List upcoming events from your Google Calendars",
+      "name": "upcoming",
+      "title": "Upcoming Events & Tasks",
+      "subtitle": "List upcoming events & tasks from your Google Calendars",
+      "description": "List upcoming events & tasks from your Google Calendars",
       "mode": "view"
     },
     {
@@ -79,6 +79,7 @@
     "dev": "ray develop",
     "fix-lint": "ray lint --fix",
     "lint": "ray lint",
+    "prettier": "prettier --write src",
     "prepublishOnly": "echo \"\\n\\nIt seems like you are trying to publish the Raycast extension to npm.\\n\\nIf you did intend to publish it to npm, remove the \\`prepublishOnly\\` script and rerun \\`npm publish\\` again.\\nIf you wanted to publish it to the Raycast Store instead, use \\`npm run publish\\` instead.\\n\\n\" && exit 1",
     "publish": "npx @raycast/api@latest publish"
   }
