@@ -1,9 +1,9 @@
 import { Action, ActionPanel, Color, Icon, List, Toast, showToast } from "@raycast/api";
 import { withAccessToken } from "@raycast/utils";
 import { useState } from "react";
-import { ExtensionCalendarConfigurationItem } from "./lib/config";
-import { useCalendars, useConfig } from "./lib/hooks";
-import { RaycastGoogleOAuthService } from "./lib/raycast/google-oauth-service";
+import { ExtensionCalendarConfigurationItem } from "@/lib/extension/config";
+import { useCalendars, useConfig } from "@/lib/extension/hooks";
+import { RaycastGoogleOAuthService } from "@/lib/gcal/raycast-google-auth-service";
 
 function Command() {
   const { data: calendars, isLoading: isCalendarsLoading } = useCalendars();

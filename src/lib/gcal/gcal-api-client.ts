@@ -6,7 +6,7 @@ import {
   GoogleCalendarEventCreationRequest,
   GoogleCalendarEventListApiResponse,
   GoogleCalendarListApiResponse,
-} from "./models";
+} from "@/lib/gcal/models";
 
 // https://developers.google.com/calendar/api/v3/reference/calendarList/list
 const API_LIST_CALENDARS_URL = "https://www.googleapis.com/calendar/v3/users/me/calendarList?showHidden=true";
@@ -20,11 +20,7 @@ const API_CREATE_EVENT_URL = "https://www.googleapis.com/calendar/v3/calendars/{
 // https://developers.google.com/calendar/api/v3/reference/events/delete
 const API_DELETE_EVENT_URL = "https://www.googleapis.com/calendar/v3/calendars/{calendarId}/events/{eventId}";
 
-export function getEventListApiEndpoint(
-  calendarId: string,
-  minTimeInHours: number = 24 * 7,
-  maxTimeInHours: number = 0,
-) {
+export function getEventListApiEndpoint(calendarId: string, minTimeInHours: number = 24 * 7, maxTimeInHours: number = 0) {
   let endpoint = API_LIST_EVENTS_URL.replace("{calendarId}", calendarId);
   const now = new Date();
   const minTime = now.getTime() - minTimeInHours * 60 * 60 * 1000;
@@ -38,8 +34,7 @@ export class GoogleCalendarClient {
   constructor(private token: string) {}
 
   async getCalendars(): Promise<GoogleCalendar[]> {
-    const calendarsResponse =
-      await this.getFromGoogleCalendarApi<GoogleCalendarListApiResponse>(API_LIST_CALENDARS_URL);
+    const calendarsResponse = await this.getFromGoogleCalendarApi<GoogleCalendarListApiResponse>(API_LIST_CALENDARS_URL);
     return calendarsResponse.items.map((item) => ({
       id: item.id!,
       name: item.summary!,
@@ -52,11 +47,7 @@ export class GoogleCalendarClient {
   }
 
   /** Returns the events for the given calendar, between the given time range. */
-  async getEvents(
-    calendar: GoogleCalendar,
-    minTimeInHours?: number,
-    maxTimeInHours?: number,
-  ): Promise<GoogleCalendarEvent[]> {
+  async getEvents(calendar: GoogleCalendar, minTimeInHours?: number, maxTimeInHours?: number): Promise<GoogleCalendarEvent[]> {
     const eventsResponse = await this.getFromGoogleCalendarApi<GoogleCalendarEventListApiResponse>(
       getEventListApiEndpoint(calendar.id, minTimeInHours, maxTimeInHours) + "&conferenceDataVersion=1",
     );
@@ -111,17 +102,12 @@ export class GoogleCalendarClient {
       },
       description: event.description,
     };
-    await this.postToGoogleCalendarApi<any>(
-      API_CREATE_EVENT_URL.replace("{calendarId}", event.calendar.id),
-      requestBody,
-    );
+    await this.postToGoogleCalendarApi<any>(API_CREATE_EVENT_URL.replace("{calendarId}", event.calendar.id), requestBody);
   }
 
   /** Deletes the given event for the given calendar. */
   async deleteEvent(eventId: string, calendarId: string): Promise<void> {
-    await this.deleteFromGoogleCalendarApi<any>(
-      API_DELETE_EVENT_URL.replace("{calendarId}", calendarId).replace("{eventId}", eventId),
-    );
+    await this.deleteFromGoogleCalendarApi<any>(API_DELETE_EVENT_URL.replace("{calendarId}", calendarId).replace("{eventId}", eventId));
   }
 
   private async getFromGoogleCalendarApi<T>(url: string): Promise<T> {

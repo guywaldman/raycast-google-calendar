@@ -1,10 +1,10 @@
+import { useCalendars, useConfig } from "@/lib/extension";
+import { GoogleCalendarClient } from "@/lib/gcal/gcal-api-client";
+import { RaycastGoogleOAuthService } from "@/lib/gcal/raycast-google-auth-service";
 import { Action, ActionPanel, Form, LaunchProps, Toast, popToRoot, showToast } from "@raycast/api";
 import { getAccessToken, withAccessToken } from "@raycast/utils";
 import * as chrono from "chrono-node";
 import { useMemo, useState } from "react";
-import { GoogleCalendarClient } from "./lib/api-client";
-import { useCalendars, useConfig } from "./lib/hooks";
-import { RaycastGoogleOAuthService } from "./lib/raycast/google-oauth-service";
 
 const DefaultDurationValues = [15, 30, 45, 60, 90, 120];
 
@@ -20,19 +20,13 @@ function Command(props: LaunchProps<{ arguments: Arguments.CreateEvent }>) {
   const { value: config, setValue: updateConfig, isLoading: isConfigLoading } = useConfig();
   const { data: calendarsData, isLoading: isCalendarsLoading } = useCalendars();
   const [durationValues, setDurationValues] = useState(DefaultDurationValues);
-  const {
-    title: titleFromArguments,
-    eventTime: eventTimeFromArguments,
-    eventDuration: eventDurationFromArguments,
-  } = props.arguments;
+  const { title: titleFromArguments, eventTime: eventTimeFromArguments, eventDuration: eventDurationFromArguments } = props.arguments;
 
   const calendars = useMemo(() => {
     if (!calendarsData || !config) {
       return null;
     }
-    const filteredCalendars = calendarsData.filter(
-      (calendar) => !config?.calendarConfiguration?.[calendar.id]?.disabled,
-    );
+    const filteredCalendars = calendarsData.filter((calendar) => !config?.calendarConfiguration?.[calendar.id]?.disabled);
     const sortedCalendars = filteredCalendars.sort((a, b) => {
       const aDisabled = config?.calendarConfiguration?.[a.id]?.disabled;
       const bDisabled = config?.calendarConfiguration?.[b.id]?.disabled;
@@ -92,11 +86,7 @@ function Command(props: LaunchProps<{ arguments: Arguments.CreateEvent }>) {
                 if (durationValues.includes(minutes)) {
                   // Item exists - move to top of list.
                   const matchingIndex = durationValues.indexOf(minutes);
-                  setDurationValues([
-                    minutes,
-                    ...durationValues.slice(0, matchingIndex),
-                    ...durationValues.slice(matchingIndex + 1),
-                  ]);
+                  setDurationValues([minutes, ...durationValues.slice(0, matchingIndex), ...durationValues.slice(matchingIndex + 1)]);
                 } else {
                   // Item does not exist - add to top of list.
                   setDurationValues([minutes, ...durationValues]);
@@ -112,9 +102,7 @@ function Command(props: LaunchProps<{ arguments: Arguments.CreateEvent }>) {
             })}
           </Form.Dropdown>
           <Form.Dropdown id="calendarId" title="Calendar" defaultValue={calendars![0].id}>
-            {calendars?.map((calendar) => (
-              <Form.Dropdown.Item key={calendar.id} title={calendar.name} value={calendar.id} />
-            ))}
+            {calendars?.map((calendar) => <Form.Dropdown.Item key={calendar.id} title={calendar.name} value={calendar.id} />)}
           </Form.Dropdown>
         </>
       )}

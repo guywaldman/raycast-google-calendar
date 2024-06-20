@@ -1,5 +1,5 @@
+import { GoogleCalendarClient } from "@/lib/gcal/gcal-api-client";
 import { getAccessToken, useCachedPromise, useLocalStorage } from "@raycast/utils";
-import { GoogleCalendarClient } from "./api-client";
 import { DefaultConfig, ExtensionConfig } from "./config";
 
 export function useCache<T>(fetcher: () => Promise<T | null>) {
