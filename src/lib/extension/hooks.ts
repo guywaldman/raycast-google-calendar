@@ -1,6 +1,8 @@
 import { GoogleCalendarClient } from "@/lib/gcal/gcal-api-client";
 import { getAccessToken, useCachedPromise, useLocalStorage } from "@raycast/utils";
 import { DefaultConfig, ExtensionConfig } from "./config";
+import { GoogleMeetConference } from "../gmeet/models";
+import { GoogleMeetClient } from "../gmeet";
 
 export function useCache<T>(fetcher: () => Promise<T | null>) {
   const { data, isLoading, mutate, revalidate } = useCachedPromise(fetcher);

@@ -3,7 +3,7 @@ import { withAccessToken } from "@raycast/utils";
 import { useMemo, useState } from "react";
 import { ExtensionCalendarConfigurationItem } from "@/lib/extension/config";
 import { useCalendars, useConfig } from "@/lib/extension/hooks";
-import { RaycastGoogleOAuthService } from "@/lib/gcal/raycast-google-auth-service";
+import { RaycastGoogleOAuthService } from "@/lib/raycast";
 
 function Command() {
   const { data: calendars, isLoading: isCalendarsLoading } = useCalendars();

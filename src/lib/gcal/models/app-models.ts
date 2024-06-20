@@ -1,3 +1,5 @@
+import { GoogleMeetConference } from "@/lib/gmeet/models";
+
 export interface GoogleCalendar {
   id: string;
   name: string;
@@ -27,6 +29,7 @@ export interface GoogleCalendarEvent {
     email?: string;
     responseStatus?: string;
   }[];
+  conference?: GoogleMeetConference;
 }
 
 export interface GoogleCalendarEventCreationRequest {

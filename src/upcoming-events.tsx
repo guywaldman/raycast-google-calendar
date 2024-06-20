@@ -1,11 +1,11 @@
 import { GoogleCalendarClient } from "@/lib/gcal/gcal-api-client";
 import { Action, ActionPanel, Color, Icon, List, Toast, showToast } from "@raycast/api";
 import { getAccessToken, withAccessToken } from "@raycast/utils";
-import { format, formatDistanceToNow, formatDuration, intervalToDuration } from "date-fns";
+import { format, formatDuration, intervalToDuration } from "date-fns";
 import { useMemo, useState } from "react";
 import { useConfig, useUpcomingEvents } from "./lib/extension/hooks";
 import { GoogleCalendarEvent } from "./lib/gcal/models";
-import { RaycastGoogleOAuthService } from "./lib/gcal/raycast-google-auth-service";
+import { RaycastGoogleOAuthService } from "./lib/raycast";
 
 function Command() {
   const { data: events, isLoading: isEventsLoading, revalidate: refreshEvents } = useUpcomingEvents();

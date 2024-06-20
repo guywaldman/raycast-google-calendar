@@ -1,10 +1,10 @@
 import { useCalendars, useConfig } from "@/lib/extension";
 import { GoogleCalendarClient } from "@/lib/gcal/gcal-api-client";
-import { RaycastGoogleOAuthService } from "@/lib/gcal/raycast-google-auth-service";
 import { Action, ActionPanel, Form, LaunchProps, Toast, popToRoot, showToast } from "@raycast/api";
 import { getAccessToken, withAccessToken } from "@raycast/utils";
 import * as chrono from "chrono-node";
 import { useMemo, useState } from "react";
+import { RaycastGoogleOAuthService } from "./lib/raycast";
 
 const DefaultDurationValues = [15, 30, 45, 60, 90, 120];
 
