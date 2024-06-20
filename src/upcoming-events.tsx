@@ -31,7 +31,7 @@ function Command() {
       },
       {} as { [day: string]: GoogleCalendarEvent[] },
     );
-    const eventsByDaySorted = Object.entries(eventsByDay).sort(([ak, av], [bk, bv]) => {
+    const eventsByDaySorted = Object.entries(eventsByDay).sort(([_ak, av], [_bk, bv]) => {
       const dayA = av[0];
       const dayB = bv[0];
       return new Date(dayA.startTime).getTime() - new Date(dayB.startTime).getTime();

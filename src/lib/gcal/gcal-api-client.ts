@@ -1,5 +1,6 @@
 import {
   GoogleCalendar,
+  GoogleCalendarApiEventCreationRequest,
   GoogleCalendarEvent,
   GoogleCalendarEventCreationRequest,
   GoogleCalendarEventListApiResponse,
@@ -7,7 +8,6 @@ import {
 } from "@/lib/gcal/models";
 import { formatISO } from "date-fns/formatISO";
 import { GoogleApiClient } from "../google-api";
-import { GoogleMeetClient } from "../gmeet";
 
 // https://developers.google.com/calendar/api/v3/reference/calendarList/list
 const API_LIST_CALENDARS_URL = "https://www.googleapis.com/calendar/v3/users/me/calendarList?showHidden=true";
@@ -32,11 +32,8 @@ export function getEventListApiEndpoint(calendarId: string, minTimeInHours: numb
 
 /** A client for interacting with the Google Calendar API. */
 export class GoogleCalendarClient extends GoogleApiClient {
-  private readonly googleMeetClient: GoogleMeetClient;
-
   constructor(protected token: string) {
     super(token);
-    this.googleMeetClient = new GoogleMeetClient(token);
   }
 
   async getCalendars(): Promise<GoogleCalendar[]> {
@@ -57,13 +54,10 @@ export class GoogleCalendarClient extends GoogleApiClient {
     const eventsResponse = await this.getFromGoogleRestApi<GoogleCalendarEventListApiResponse>(
       getEventListApiEndpoint(calendar.id, minTimeInHours, maxTimeInHours) + "&conferenceDataVersion=1",
     );
-    // @ts-ignore
+    // @ts-expect-error Error is not typed correctly.
     if (eventsResponse.error) {
       return [];
     }
-
-    const conferenceIds = eventsResponse.items.map((item) => item.conferenceData?.conferenceId).filter(Boolean);
-    const conferences = await Promise.all(conferenceIds.map((id) => this.googleMeetClient.getConferenceData(id!)));
 
     const events = eventsResponse.items.map((item) => {
       return {
@@ -84,7 +78,6 @@ export class GoogleCalendarClient extends GoogleApiClient {
           email: attendee.email,
           responseStatus: attendee.responseStatus,
         })),
-        conference: conferences.find((c) => c.id === item.conferenceData?.conferenceId),
       } satisfies GoogleCalendarEvent;
     });
     return events;
@@ -111,8 +104,11 @@ export class GoogleCalendarClient extends GoogleApiClient {
         timeZone: event.calendar.timezone,
       },
       description: event.description,
-    };
-    await this.postToGoogleRestApi<any>(API_CREATE_EVENT_URL.replace("{calendarId}", event.calendar.id), requestBody);
+    } satisfies GoogleCalendarApiEventCreationRequest;
+    await this.postToGoogleRestApi<GoogleCalendarApiEventCreationRequest>(
+      API_CREATE_EVENT_URL.replace("{calendarId}", event.calendar.id),
+      requestBody,
+    );
   }
 
   /** Deletes the given event for the given calendar. */

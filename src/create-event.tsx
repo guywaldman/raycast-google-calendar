@@ -17,7 +17,7 @@ interface FormValues {
 }
 
 function Command(props: LaunchProps<{ arguments: Arguments.CreateEvent }>) {
-  const { value: config, setValue: updateConfig, isLoading: isConfigLoading } = useConfig();
+  const { value: config, isLoading: isConfigLoading } = useConfig();
   const { data: calendarsData, isLoading: isCalendarsLoading } = useCalendars();
   const [durationValues, setDurationValues] = useState(DefaultDurationValues);
   const { title: titleFromArguments, eventTime: eventTimeFromArguments, eventDuration: eventDurationFromArguments } = props.arguments;

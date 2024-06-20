@@ -33,7 +33,7 @@ function Command() {
   return (
     <List isShowingDetail={showDetails} isLoading={isLoading}>
       {config &&
-        sortedCalendars?.map(({ id, name, timezone, description, location, backgroundColor, hidden }) => {
+        sortedCalendars?.map(({ id, name, timezone, description, location, hidden }) => {
           const isDisabled = config!.calendarConfiguration?.[id]?.disabled;
 
           const accessories: List.Item.Accessory[] = [];

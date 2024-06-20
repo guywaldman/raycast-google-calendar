@@ -169,7 +169,7 @@ export interface GoogleCalendarEventListApiItemResponse {
   };
   workingLocationProperties?: {
     type?: string;
-    homeOffice?: any;
+    homeOffice?: unknown;
     customLocation?: {
       label?: string;
     };
@@ -198,4 +198,19 @@ export interface GoogleCalendarEventListApiItemResponse {
     fileId?: string;
   }[];
   eventType?: string;
+}
+
+export interface GoogleCalendarApiEventCreationRequest {
+  summary: string;
+  description: string;
+  start: {
+    dateTime?: string;
+    date?: string;
+    timeZone?: string;
+  };
+  end: {
+    dateTime?: string;
+    date?: string;
+    timeZone?: string;
+  };
 }
