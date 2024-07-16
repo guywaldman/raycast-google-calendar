@@ -3,6 +3,16 @@
 Raycast extension to manage your Google Calendar.  
 Designed to be delightful and productive to use.
 
+## Setting up the extension
+
+You will need to add a Google Client ID to the extension preferences.  
+See the [Set up a Google Client ID](#set-up-a-google-client-id) section below for instructions.
+
+> [!IMPORTANT]
+>
+> I am working on setting up a Google OAuth application for public use, however the application process takes a while.
+> Until then, you will need to add your own Google Client ID to the extension preferences.
+
 ## Features
 
 - **Create events** quickly
