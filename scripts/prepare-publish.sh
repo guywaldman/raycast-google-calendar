@@ -17,6 +17,9 @@ else
 	git clone https://github.com/guywaldman/raycast-extensions --depth=1 --branch=master $RAYCAST_EXTENSIONS_DIR_NAME
 fi
 
+echo "Deleting existing extension"
+rm -rf $RAYCAST_EXTENSIONS_DIR_NAME/extensions/$EXTENSION_NAME
+
 echo "Copying extension to $RAYCAST_EXTENSIONS_DIR_NAME/$EXTENSION_NAME"
 mkdir -p $RAYCAST_EXTENSIONS_DIR_NAME/$EXTENSION_NAME
 rsync -av . $RAYCAST_EXTENSIONS_DIR_NAME/extensions/$EXTENSION_NAME --exclude=.git --exclude=node_modules --exclude=$RAYCAST_EXTENSIONS_DIR_NAME --exclude=scripts --exclude=.vscode
